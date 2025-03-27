@@ -1,0 +1,10 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.Class0306" parent="Theme.AppCompat.DayNight.DarkActionBar">
+        <!--Theme.AppCompat.DayNight.DarkActionBar : 색상 변경 안됨-->
+        <!-- Customize your light theme here. -->
+        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+    </style>
+
+    <style name="Theme.Class0306" parent="Base.Theme.Class0306" />
+</resources>
