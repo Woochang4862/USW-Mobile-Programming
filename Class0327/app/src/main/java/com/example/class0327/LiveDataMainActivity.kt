@@ -2,7 +2,6 @@ package com.example.class0327
 
 import android.os.Bundle
 import android.view.View
-import android.widget.Button
 import android.widget.CheckBox
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -12,13 +11,13 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.MutableLiveData
 
-class MainActivity : AppCompatActivity() {
+class LiveDataMainActivity : AppCompatActivity() {
 
     // 뷰를 담을 변수 선언
     private lateinit var startCheckBox: CheckBox
     private lateinit var selectContainer: LinearLayout
-    private lateinit var doneButton: Button
     private lateinit var animalImageView: ImageView
     private lateinit var radioGroup: RadioGroup
 
@@ -28,6 +27,10 @@ class MainActivity : AppCompatActivity() {
         R.id.cat_button to R.drawable.cat,
         R.id.rabbit_button to R.drawable.rabbit
     )
+
+    // 사용할 데이터 선언
+    private val visibility: MutableLiveData<Boolean> = MutableLiveData(false)
+    private val displayImage: MutableLiveData<Int?> = MutableLiveData(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,23 +51,26 @@ class MainActivity : AppCompatActivity() {
         // 뷰 바인딩
         startCheckBox = findViewById(R.id.start_check_box)
         selectContainer = findViewById(R.id.select_container)
-        doneButton = findViewById(R.id.done_button)
         animalImageView = findViewById(R.id.animal_image_view)
         radioGroup = findViewById(R.id.radio_group)
 
         // 리스너 등록
         startCheckBox.setOnCheckedChangeListener { _, isChecked ->
-            selectContainer.visibility = if (isChecked) View.VISIBLE else View.GONE
+            visibility.value = isChecked
+        }
+        radioGroup.setOnCheckedChangeListener { _, id ->
+            displayImage.value = drawables[id]
         }
 
-        doneButton.setOnClickListener {
-            drawables[radioGroup.checkedRadioButtonId]?.let {
-                // drawables[radioGroup.checkedRadioButtonId] 가 null 이 아닐 때 실행
+        // observer 등록
+        visibility.observe(this) {
+            selectContainer.visibility = if (it) View.VISIBLE else View.GONE
+        }
+        displayImage.observe(this) {
+            if (it != null)
                 animalImageView.setImageResource(it)
-            } ?: let {
-                // drawables[radioGroup.checkedRadioButtonId] 가 null 일 때 실행
+            else
                 Toast.makeText(this, "애완동물을 선택해주세요.", Toast.LENGTH_SHORT).show()
-            }
         }
     }
 }
