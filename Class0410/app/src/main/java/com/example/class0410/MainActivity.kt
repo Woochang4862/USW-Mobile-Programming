@@ -91,7 +91,7 @@ class MainActivity : AppCompatActivity() {
         calculateButton.setOnClickListener {
             val expression = expressionTextView.text.toString()
             if (isValidExpression(expression)) {
-                var result = evaluateExpression(expression)
+                val result = evaluateExpression(expression)
                 resultTextView.text = "계산결과 : $result"
             } else {
                 Toast.makeText(this, "식을 완성해주세요.", Toast.LENGTH_SHORT).show()
