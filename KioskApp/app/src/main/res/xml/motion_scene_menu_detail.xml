@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="utf-8"?>
+<MotionScene xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:motion="http://schemas.android.com/apk/res-auto">
+
+    <Transition
+        motion:constraintSetEnd="@+id/customize_state"
+        motion:constraintSetStart="@+id/default_state"
+        motion:duration="400"
+        motion:motionInterpolator="easeInOut">
+        <OnClick
+            motion:targetId="@id/btn_customize"
+            motion:clickAction="transitionToEnd" />
+        <KeyFrameSet>
+            <!-- 닫기 버튼 페이드 아웃 -->
+            <KeyAttribute
+                motion:motionTarget="@id/btn_close"
+                motion:framePosition="50"
+                android:alpha="0" />
+            <!-- 뒤로가기 버튼 페이드 인 -->
+            <KeyAttribute
+                motion:motionTarget="@id/btn_back"
+                motion:framePosition="50"
+                android:alpha="1" />
+            <!-- 커스터마이즈/완료 버튼 페이드 아웃 -->
+            <KeyAttribute
+                motion:motionTarget="@id/btn_customize"
+                motion:framePosition="30"
+                android:alpha="0" />
+            <KeyAttribute
+                motion:motionTarget="@id/btn_done"
+                motion:framePosition="30"
+                android:alpha="0" />
+            <KeyAttribute
+                motion:motionTarget="@id/button_layout"
+                motion:framePosition="30"
+                android:alpha="0" />
+            <!-- Apply 버튼 페이드 인 -->
+            <KeyAttribute
+                motion:motionTarget="@id/btn_apply"
+                motion:framePosition="70"
+                android:alpha="1" />
+        </KeyFrameSet>
+    </Transition>
+
+    <Transition
+        motion:constraintSetEnd="@+id/default_state"
+        motion:constraintSetStart="@+id/customize_state"
+        motion:duration="400"
+        motion:motionInterpolator="easeInOut">
+        <OnClick
+            motion:targetId="@id/btn_back"
+            motion:clickAction="transitionToEnd" />
+        <KeyFrameSet>
+            <!-- 뒤로가기 버튼을 페이드 아웃 -->
+            <KeyAttribute
+                motion:motionTarget="@id/btn_back"
+                motion:framePosition="50"
+                android:alpha="0" />
+            <!-- 닫기 버튼을 페이드 인 -->
+            <KeyAttribute
+                motion:motionTarget="@id/btn_close"
+                motion:framePosition="50"
+                android:alpha="1" />
+            <!-- 커스터마이즈/완료 버튼 페이드 인 -->
+            <KeyAttribute
+                motion:motionTarget="@id/btn_customize"
+                motion:framePosition="70"
+                android:alpha="1" />
+            <KeyAttribute
+                motion:motionTarget="@id/btn_done"
+                motion:framePosition="70"
+                android:alpha="1" />
+            <KeyAttribute
+                motion:motionTarget="@id/button_layout"
+                motion:framePosition="70"
+                android:alpha="1" />
+            <!-- Apply 버튼 페이드 아웃 -->
+            <KeyAttribute
+                motion:motionTarget="@id/btn_apply"
+                motion:framePosition="30"
+                android:alpha="0" />
+        </KeyFrameSet>
+    </Transition>
+
+    <!-- 기본 상태 정의 -->
+    <ConstraintSet android:id="@id/default_state">
+        <!-- 메뉴 이미지 -->
+        <Constraint
+            android:id="@+id/menu_image"
+            android:layout_width="180dp"
+            android:layout_height="180dp"
+            android:layout_marginTop="16dp"
+            motion:layout_constraintEnd_toEndOf="parent"
+            motion:layout_constraintStart_toStartOf="parent"
+            motion:layout_constraintTop_toBottomOf="@id/btn_close" />
+
+        <!-- 닫기 버튼 표시, 뒤로가기 버튼 숨김 -->
+        <Constraint
+            android:id="@+id/btn_close"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginTop="16dp"
+            android:alpha="1"
+            android:visibility="visible"
+            motion:layout_constraintEnd_toEndOf="parent"
+            motion:layout_constraintStart_toStartOf="parent"
+            motion:layout_constraintTop_toTopOf="parent" />
+
+        <Constraint
+            android:id="@+id/btn_back"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginTop="16dp"
+            android:alpha="0"
+            android:visibility="invisible"
+            motion:layout_constraintEnd_toEndOf="parent"
+            motion:layout_constraintStart_toStartOf="parent"
+            motion:layout_constraintTop_toTopOf="parent" />
+
+        <!-- 커스터마이즈 버튼 표시 -->
+        <Constraint
+            android:id="@+id/btn_customize"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:visibility="visible"
+            android:alpha="1"
+            motion:layout_constraintEnd_toStartOf="@id/btn_done"
+            motion:layout_constraintStart_toStartOf="@id/button_layout"
+            motion:layout_constraintTop_toTopOf="@id/button_layout" />
+
+        <!-- 완료 버튼 표시 -->
+        <Constraint
+            android:id="@+id/btn_done"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:visibility="visible"
+            android:alpha="1"
+            motion:layout_constraintEnd_toEndOf="@id/button_layout"
+            motion:layout_constraintStart_toEndOf="@id/btn_customize"
+            motion:layout_constraintTop_toTopOf="@id/button_layout" />
+
+        <!-- 토핑 목록 숨김 -->
+        <Constraint
+            android:id="@+id/topping_recycler_view"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            motion:layout_constraintEnd_toEndOf="parent"
+            motion:layout_constraintStart_toStartOf="parent"
+            motion:layout_constraintTop_toBottomOf="@id/quantity_layout" />
+            
+        <!-- Apply 버튼 숨김 -->
+        <Constraint
+            android:id="@+id/btn_apply"
+            android:layout_width="180dp"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="32dp"
+            android:visibility="gone"
+            motion:layout_constraintBottom_toBottomOf="parent"
+            motion:layout_constraintEnd_toEndOf="parent"
+            motion:layout_constraintStart_toStartOf="parent" />
+
+        <!-- 버튼 레이아웃 하단에 배치 -->
+        <Constraint
+            android:id="@+id/button_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:visibility="visible"
+            android:alpha="1"
+            motion:layout_constraintBottom_toBottomOf="parent"
+            motion:layout_constraintEnd_toEndOf="parent"
+            motion:layout_constraintStart_toStartOf="parent"
+            motion:layout_constraintTop_toBottomOf="@id/topping_recycler_view" />
+    </ConstraintSet>
+
+    <!-- 커스터마이즈 상태 정의 -->
+    <ConstraintSet android:id="@id/customize_state">
+        <!-- 메뉴 이미지 (작게) -->
+        <Constraint
+            android:id="@+id/menu_image"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_marginTop="16dp"
+            motion:layout_constraintEnd_toEndOf="parent"
+            motion:layout_constraintStart_toStartOf="parent"
+            motion:layout_constraintTop_toBottomOf="@id/btn_back" />
+
+        <!-- 뒤로가기 버튼 표시, 닫기 버튼 숨김 -->
+        <Constraint
+            android:id="@+id/btn_close"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginTop="16dp"
+            android:alpha="0"
+            android:visibility="invisible"
+            motion:layout_constraintEnd_toEndOf="parent"
+            motion:layout_constraintStart_toStartOf="parent"
+            motion:layout_constraintTop_toTopOf="parent" />
+
+        <Constraint
+            android:id="@+id/btn_back"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginTop="16dp"
+            android:alpha="1"
+            android:visibility="visible"
+            motion:layout_constraintEnd_toEndOf="parent"
+            motion:layout_constraintStart_toStartOf="parent"
+            motion:layout_constraintTop_toTopOf="parent" />
+
+        <!-- 커스터마이즈 버튼 숨김 -->
+        <Constraint
+            android:id="@+id/btn_customize"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:visibility="gone"
+            android:alpha="0"
+            motion:layout_constraintEnd_toStartOf="@id/btn_done"
+            motion:layout_constraintStart_toStartOf="@id/button_layout"
+            motion:layout_constraintTop_toTopOf="@id/button_layout" />
+
+        <!-- 완료 버튼 숨김 -->
+        <Constraint
+            android:id="@+id/btn_done"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:visibility="gone"
+            android:alpha="0"
+            motion:layout_constraintEnd_toEndOf="@id/button_layout"
+            motion:layout_constraintStart_toEndOf="@id/btn_customize"
+            motion:layout_constraintTop_toTopOf="@id/button_layout" />
+
+        <!-- 토핑 목록 표시 -->
+        <Constraint
+            android:id="@+id/topping_recycler_view"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:visibility="visible"
+            motion:layout_constraintEnd_toEndOf="parent"
+            motion:layout_constraintStart_toStartOf="parent"
+            motion:layout_constraintTop_toBottomOf="@id/quantity_layout" />
+            
+        <!-- Apply 버튼 표시 -->
+        <Constraint
+            android:id="@+id/btn_apply"
+            android:layout_width="180dp"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:visibility="visible"
+            motion:layout_constraintBottom_toBottomOf="parent"
+            motion:layout_constraintEnd_toEndOf="parent"
+            motion:layout_constraintStart_toStartOf="parent" />
+
+        <!-- 버튼 레이아웃 위치 변경 -->
+        <Constraint
+            android:id="@+id/button_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="0dp"
+            android:visibility="gone"
+            android:alpha="0"
+            motion:layout_constraintBottom_toBottomOf="parent"
+            motion:layout_constraintEnd_toEndOf="parent"
+            motion:layout_constraintStart_toStartOf="parent" />
+    </ConstraintSet>
+</MotionScene> 

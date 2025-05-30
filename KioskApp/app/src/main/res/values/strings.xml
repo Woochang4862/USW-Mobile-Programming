@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">KioskApp</string>
+    <string name="greeting_message" translatable="false">
+
+        Hey,\nwhat\'s up?
+
+    </string>
+</resources>
