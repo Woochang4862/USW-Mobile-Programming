@@ -23,7 +23,7 @@ class MenuDetailBottomSheet(private val onOrderConfirmListener: OnOrderConfirmLi
     private val viewModel: MainViewModel by activityViewModels()
     private lateinit var toppingAdapter: ToppingRecyclerAdapter
     private var quantity = 1
-    private var isCustomizeMode = false
+    private lateinit var menuItem: MenuItem
 
     companion object {
         private const val ARG_MENU_ITEM = "menu_item"
@@ -31,9 +31,7 @@ class MenuDetailBottomSheet(private val onOrderConfirmListener: OnOrderConfirmLi
         fun newInstance(menuItem: MenuItem, onOrderConfirmListener: OnOrderConfirmListener): MenuDetailBottomSheet {
             val fragment = MenuDetailBottomSheet(onOrderConfirmListener)
             val args = Bundle()
-            args.putString("name", menuItem.name)
-            args.putInt("price", menuItem.price)
-            args.putString("imageUrl", menuItem.imageUrl)
+            args.putParcelable(ARG_MENU_ITEM, menuItem)
             fragment.arguments = args
             return fragment
         }
@@ -48,12 +46,10 @@ class MenuDetailBottomSheet(private val onOrderConfirmListener: OnOrderConfirmLi
     ): View {
         _binding = BottomSheetMenuDetailBinding.inflate(inflater, container, false)
         
-        // 데이터 설정
-        val name = arguments?.getString("name") ?: ""
-        val price = arguments?.getInt("price") ?: 0
-        val imageUrl = arguments?.getString("imageUrl") ?: ""
+        // MenuItem 가져오기
+        menuItem = arguments?.getParcelable(ARG_MENU_ITEM) ?: throw IllegalArgumentException("MenuItem is required")
         
-        setupUI(name, price, imageUrl)
+        setupUI()
         setupListeners()
         setupToppingRecyclerView()
         
@@ -65,15 +61,15 @@ class MenuDetailBottomSheet(private val onOrderConfirmListener: OnOrderConfirmLi
         _binding = null
     }
     
-    private fun setupUI(name: String, price: Int, imageUrl: String) {
+    private fun setupUI() {
         with(binding) {
-            menuName.text = name
+            menuName.text = menuItem.name
             menuDescription.text = "540 Cal" // 예시 값. 실제로는 MenuItem에서 가져와야 합니다.
-            menuPrice.text = "$price 원"
+            menuPrice.text = "${menuItem.price} 원"
             orderQuantity.text = quantity.toString()
             
             Glide.with(requireContext())
-                .load(imageUrl)
+                .load(menuItem.imageUrl)
                 .into(menuImage)
         }
     }
@@ -85,18 +81,23 @@ class MenuDetailBottomSheet(private val onOrderConfirmListener: OnOrderConfirmLi
                 dismiss()
             }
             
-            // Apply 버튼
-            btnApply.setOnClickListener {
-                Log.d(TAG, "Apply 버튼 클릭됨")
-                // 상태 ID를 직접 지정하여 transitionToState() 사용
-                motionLayout.transitionToState(R.id.default_state)
-                isCustomizeMode = false
+            // 뒤로가기 버튼 (MotionLayout에서 자동으로 처리되지만 명시적으로 추가)
+            btnBack.setOnClickListener {
+                // MotionLayout이 default_state로 전환하도록 함
+                motionLayout.transitionToStart()
             }
             
-            // 수량 증가 버튼 - 자동 커스터마이즈 모드 전환 제거
+            // Apply 버튼 (MotionLayout에서 자동으로 처리되지만 명시적으로 추가)
+            btnApply.setOnClickListener {
+                Log.d(TAG, "Apply 버튼 클릭됨")
+                motionLayout.transitionToStart()
+            }
+            
+            // 수량 증가 버튼
             btnIncrease.setOnClickListener {
                 quantity++
                 orderQuantity.text = quantity.toString()
+                updateTotalPrice()
             }
             
             // 수량 감소
@@ -104,6 +105,7 @@ class MenuDetailBottomSheet(private val onOrderConfirmListener: OnOrderConfirmLi
                 if (quantity > 1) {
                     quantity--
                     orderQuantity.text = quantity.toString()
+                    updateTotalPrice()
                 }
             }
 
@@ -112,22 +114,49 @@ class MenuDetailBottomSheet(private val onOrderConfirmListener: OnOrderConfirmLi
                 onOrderConfirmListener.onOrderConfirm(quantity, toppings)
                 dismiss()
             }
+            
+            // MotionLayout 상태 변화 리스너
+            motionLayout.setTransitionListener(object : MotionLayout.TransitionListener {
+                override fun onTransitionStarted(motionLayout: MotionLayout?, startId: Int, endId: Int) {}
+                
+                override fun onTransitionChange(motionLayout: MotionLayout?, startId: Int, endId: Int, progress: Float) {}
+                
+                override fun onTransitionCompleted(motionLayout: MotionLayout?, currentId: Int) {
+                    // 커스터마이즈 모드로 전환 완료 시 토핑 데이터 로드
+                    if (currentId == R.id.customize_state) {
+                        loadToppingsData()
+                    }
+                }
+                
+                override fun onTransitionTrigger(motionLayout: MotionLayout?, triggerId: Int, positive: Boolean, progress: Float) {}
+            })
         }
     }
     
     private fun setupToppingRecyclerView() {
         toppingAdapter = ToppingRecyclerAdapter { toppingItem ->
-            // 토핑 선택 시 처리
+            // 토핑 선택 시 가격 업데이트
+            updateTotalPrice()
         }
         
         binding.toppingRecyclerView.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = toppingAdapter
         }
-        
-        // ViewModel에서 토핑 데이터 가져오기
-        val toppings = viewModel.getToppings()
-        toppingAdapter.setItems(toppings)
+    }
+    
+    private fun loadToppingsData() {
+        // 특정 메뉴의 토핑 데이터 가져오기 (커스터마이즈 모드에서만 로드)
+        viewModel.getToppingsForMenu(menuItem) { toppings ->
+            toppingAdapter.setItems(toppings)
+        }
+    }
+    
+    // 토핑 가격을 포함한 총 가격 업데이트
+    private fun updateTotalPrice() {
+        val selectedToppings = toppingAdapter.getToppings()
+        val totalPrice = viewModel.calculateTotalPrice(menuItem, selectedToppings) * quantity
+        binding.menuPrice.text = "$totalPrice 원"
     }
 } 
 

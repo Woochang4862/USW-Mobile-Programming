@@ -2,8 +2,11 @@ package com.example.kioskapp
 
 import android.content.Intent
 import android.os.Bundle
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.example.kioskapp.adapter.OrderConfirmRecyclerAdapter
@@ -16,14 +19,21 @@ class OrderConfirmActivity : AppCompatActivity() {
     private lateinit var binding: ActivityOrderConfirmBinding
     private val viewModel: OrderConfirmViewModel by viewModels()
     private lateinit var orderConfirmAdapter: OrderConfirmRecyclerAdapter
+    private var orderItems: ArrayList<OrderItem> = arrayListOf()
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         binding = ActivityOrderConfirmBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            insets
+        }
         
         // Intent에서 주문 목록 받기
-        val orderItems = intent.getParcelableArrayListExtra<OrderItem>("orderItems") ?: arrayListOf()
+        orderItems = intent.getParcelableArrayListExtra<OrderItem>("orderItems") ?: arrayListOf()
         viewModel.setOrderItems(orderItems)
         
         setupUI()
@@ -45,10 +55,10 @@ class OrderConfirmActivity : AppCompatActivity() {
             
             // 체크아웃 버튼
             btnCheckout.setOnClickListener {
-                viewModel.checkout()
-                // 결제 완료 후 메인 화면으로 이동
-                val intent = Intent(this@OrderConfirmActivity, MainActivity::class.java)
-                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
+                // 결제 화면으로 이동
+                val intent = Intent(this@OrderConfirmActivity, PaymentActivity::class.java)
+                intent.putExtra("TOTAL_AMOUNT", viewModel.totalPrice.value ?: 0)
+                intent.putParcelableArrayListExtra("ORDER_ITEMS", orderItems)
                 startActivity(intent)
                 finish()
             }

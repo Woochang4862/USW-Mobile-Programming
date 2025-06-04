@@ -1,19 +1,22 @@
 package com.example.kioskapp.viewmodel
 
-import CategoryItem
+import android.app.Application
+import com.example.kioskapp.model.CategoryItem
 import android.util.Log
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.kioskapp.model.MenuItem
 import com.example.kioskapp.model.OrderItem
 import com.example.kioskapp.model.ToppingItem
 import com.example.kioskapp.repository.MenuRepository
 import com.example.kioskapp.repository.OrderRepository
+import kotlinx.coroutines.launch
 
-class MainViewModel : ViewModel() {
+class MainViewModel(application: Application) : AndroidViewModel(application) {
     
-    private val menuRepository = MenuRepository()
+    private val menuRepository = MenuRepository(application)
     private val orderRepository = OrderRepository()
     
     // Categories
@@ -41,30 +44,45 @@ class MainViewModel : ViewModel() {
     }
     
     private fun loadCategories() {
-        val categories = menuRepository.getCategories()
-        _categories.value = categories
-        
-        // 첫 번째 카테고리를 기본 선택
-        if (categories.isNotEmpty()) {
-            Log.d("TAG", "loadCategories: ")
-            selectCategory(categories[0])
+        viewModelScope.launch {
+            try {
+                val categories = menuRepository.getCategories()
+                _categories.value = categories
+                
+                // 첫 번째 카테고리를 기본 선택
+                if (categories.isNotEmpty()) {
+                    selectCategory(categories[0])
+                }
+            } catch (e: Exception) {
+                Log.e("MainViewModel", "Error loading categories", e)
+            }
         }
     }
     
     fun selectCategory(category: CategoryItem) {
-        _selectedCategory.value = category
-        _menuItems.value = menuRepository.getMenuItems(category)
-        Log.d("TAG", "selectCategory: ${menuItems.value}")
+        viewModelScope.launch {
+            try {
+                _selectedCategory.value = category
+                val menuItems = menuRepository.getMenuItems(category)
+                _menuItems.value = menuItems
+            } catch (e: Exception) {
+                Log.e("MainViewModel", "Error selecting category", e)
+            }
+        }
     }
     
     fun addOrderItem(menuItem: MenuItem, quantity: Int, toppings: List<ToppingItem>) {
+        // 토핑 가격을 포함한 총 가격 계산
+        val toppingPrice = toppings.filter { it.selected }.sumOf { it.price }
+        val totalItemPrice = menuItem.price + toppingPrice
+        
         val orderItem = OrderItem(
-            id = menuItem.id.toLong(),
+            id = menuItem.id,
             name = menuItem.name,
-            price = menuItem.price,
+            price = totalItemPrice,
             imageUrl = menuItem.imageUrl,
             quantity = quantity,
-            toppings = toppings
+            toppings = toppings.filter { it.selected }
         )
         
         orderRepository.addOrderItem(orderItem)
@@ -90,7 +108,35 @@ class MainViewModel : ViewModel() {
         return orderRepository.getOrderItemsForIntent()
     }
     
-    fun getToppings(): List<ToppingItem> {
-        return menuRepository.getToppings()
+    fun getToppings(callback: (List<ToppingItem>) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val toppings = menuRepository.getToppings()
+                callback(toppings)
+            } catch (e: Exception) {
+                Log.e("MainViewModel", "Error loading toppings", e)
+                callback(emptyList())
+            }
+        }
+    }
+    
+    // 특정 메뉴의 토핑만 가져오는 새로운 메서드
+    fun getToppingsForMenu(menuItem: MenuItem, callback: (List<ToppingItem>) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val toppings = menuRepository.getToppingsByMenu(menuItem)
+                Log.d("MainViewModel", "Loaded ${toppings.size} toppings for menu: ${menuItem.name}")
+                callback(toppings)
+            } catch (e: Exception) {
+                Log.e("MainViewModel", "Error loading toppings for menu", e)
+                callback(emptyList())
+            }
+        }
+    }
+    
+    // 토핑 가격을 포함한 메뉴 총 가격 계산
+    fun calculateTotalPrice(menuItem: MenuItem, selectedToppings: List<ToppingItem>): Int {
+        val toppingPrice = selectedToppings.filter { it.selected }.sumOf { it.price }
+        return menuItem.price + toppingPrice
     }
 } 

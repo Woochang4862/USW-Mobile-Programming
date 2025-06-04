@@ -1,6 +1,6 @@
 package com.example.kioskapp.adapter
 
-import CategoryItem
+import com.example.kioskapp.model.CategoryItem
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup

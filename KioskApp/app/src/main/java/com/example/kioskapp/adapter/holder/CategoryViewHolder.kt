@@ -1,6 +1,6 @@
 package com.example.kioskapp.adapter.holder
 
-import CategoryItem
+import com.example.kioskapp.model.CategoryItem
 import android.graphics.Color
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.bumptech.glide.Glide

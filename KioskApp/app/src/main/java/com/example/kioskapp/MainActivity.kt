@@ -4,10 +4,10 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
@@ -22,7 +22,7 @@ import com.example.kioskapp.viewmodel.MainViewModel
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-    private val viewModel: MainViewModel by viewModels()
+    private lateinit var viewModel: MainViewModel
 
     private lateinit var categoryRecyclerAdapter: CategoryRecyclerAdapter
     private lateinit var menuRecyclerAdapter: MenuRecyclerAdapter
@@ -38,6 +38,9 @@ class MainActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+
+        // ViewModel 초기화
+        viewModel = ViewModelProvider(this)[MainViewModel::class.java]
 
         setupUI()
         setupObservers()
@@ -63,21 +66,33 @@ class MainActivity : AppCompatActivity() {
             menuRecyclerAdapter = MenuRecyclerAdapter(object : OnItemClickListener {
                 override fun onItemClick(view: View, position: Int) {
                     val menuItem = menuRecyclerAdapter.getItem(position)
-                    val bottomSheet = MenuDetailBottomSheet.newInstance(menuItem, object : OnOrderConfirmListener {
-                        override fun onOrderConfirm(quantity: Int, toppings: List<ToppingItem>) {
-                            viewModel.addOrderItem(menuItem, quantity, toppings)
-                        }
-                    })
+                    val bottomSheet = MenuDetailBottomSheet.newInstance(
+                        menuItem,
+                        object : OnOrderConfirmListener {
+                            override fun onOrderConfirm(
+                                quantity: Int,
+                                toppings: List<ToppingItem>
+                            ) {
+                                viewModel.addOrderItem(menuItem, quantity, toppings)
+                            }
+                        })
                     bottomSheet.show(supportFragmentManager, bottomSheet.tag)
                 }
             })
             menuList.adapter = menuRecyclerAdapter
             menuList.layoutManager = GridLayoutManager(applicationContext, 3)
 
-            // Shopping Cart RecyclerView 설정
-            shoppingCartRecyclerAdapter = OrderRecyclerAdapter { items ->
-                // 총 가격은 ViewModel에서 관리되므로 여기서는 빈 람다
-            }
+            // Shopping Cart RecyclerView 설정 (콜백 제거하여 무한 루프 방지)
+            shoppingCartRecyclerAdapter = OrderRecyclerAdapter(
+                onItemQuantityUpdate = { orderItem, newQuantity ->
+                    // 실제 데이터 변경은 ViewModel을 통해 처리
+                    if (newQuantity == 0) {
+                        viewModel.removeOrderItem(orderItem)
+                    } else {
+                        viewModel.updateOrderItemQuantity(orderItem, newQuantity)
+                    }
+                }
+            )
             shoppingCart.adapter = shoppingCartRecyclerAdapter
             shoppingCart.layoutManager = LinearLayoutManager(applicationContext)
 
@@ -100,6 +115,7 @@ class MainActivity : AppCompatActivity() {
         // 선택된 카테고리 관찰
         viewModel.selectedCategory.observe(this) { category ->
             binding.menuHeader.text = category.name
+            binding.nestedScrollView.smoothScrollTo(0, binding.menuHeader.bottom)
         }
 
         // 메뉴 아이템 목록 관찰
@@ -108,10 +124,10 @@ class MainActivity : AppCompatActivity() {
             menuItems.forEach { menuRecyclerAdapter.add(it) }
         }
 
-        // 주문 아이템 목록 관찰
+        // 주문 아이템 목록 관찰 (새로운 데이터로 어댑터 설정)
         viewModel.orderItems.observe(this) { orderItems ->
-            shoppingCartRecyclerAdapter.clear()
-            orderItems.forEach { shoppingCartRecyclerAdapter.addItem(it) }
+            // 기존 아이템들을 클리어하고 새로운 아이템들로 교체
+            shoppingCartRecyclerAdapter.setItems(orderItems)
         }
 
         // 총 가격 관찰

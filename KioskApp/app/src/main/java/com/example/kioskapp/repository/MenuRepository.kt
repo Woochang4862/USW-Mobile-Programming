@@ -1,64 +1,104 @@
 package com.example.kioskapp.repository
 
-import CategoryItem
+import android.content.Context
+import android.util.Log
+import com.example.kioskapp.database.KioskDatabase
+import com.example.kioskapp.database.converters.toCategoryEntity
+import com.example.kioskapp.database.converters.toCategoryItem
+import com.example.kioskapp.database.converters.toMenuEntity
+import com.example.kioskapp.database.converters.toMenuItem
+import com.example.kioskapp.database.converters.toToppingEntity
+import com.example.kioskapp.database.converters.toToppingItem
+import com.example.kioskapp.database.utils.JsonDataLoader
+import com.example.kioskapp.model.CategoryItem
 import com.example.kioskapp.model.MenuItem
 import com.example.kioskapp.model.ToppingItem
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
-class MenuRepository {
-    
-    fun getCategories(): List<CategoryItem> {
-        return listOf(
-            CategoryItem(
-                "버거",
-                imageUrl = "https://www.mcdonalds.co.kr/upload/product/pcfile/1583727855319.png"
-            ),
-            CategoryItem(
-                "맥런치",
-                imageUrl = "https://www.mcdonalds.co.kr/upload/product/pcfile/1723562078946.png"
-            ),
-            CategoryItem(
-                "맥모닝",
-                imageUrl = "https://www.mcdonalds.co.kr/uploadFolder/product/prov_201901290308474630.png"
-            ),
-            CategoryItem(
-                "해피스낵",
-                imageUrl = "https://www.mcdonalds.co.kr/upload/product/pcfile/1715674478138.png"
-            ),
-            CategoryItem(
-                "사이드&디저트",
-                imageUrl = "https://www.mcdonalds.co.kr/upload/product/pcfile/1745400936851.png"
-            ),
-            CategoryItem(
-                "맥카페&음료",
-                imageUrl = "https://www.mcdonalds.co.kr/upload/product/pcfile/1677678794782.png"
-            ),
-            CategoryItem(
-                "해피밀",
-                imageUrl = "https://www.mcdonalds.co.kr/kor/images/common/logo.png"
-            )
-        )
-    }
-    
-    fun getMenuItems(category: CategoryItem): List<MenuItem> {
-        // 실제 앱에서는 API 호출이나 데이터베이스에서 가져올 데이터
-        return (1..9).map { i ->
-            MenuItem(
-                id = i.toLong(),
-                name = "${category.name} 메뉴 $i",
-                price = (3000..8000).random(),
-                imageUrl = "https://m.mcdonalds.co.kr/upload/product/pcimg/1583727841698.png"
-            )
+class MenuRepository(private val context: Context) {
+
+    private val database = KioskDatabase.getDatabase(context)
+    private val categoryDao = database.categoryDao()
+    private val menuDao = database.menuDao()
+    private val toppingDao = database.toppingDao()
+
+    init {
+        // 앱 시작 시 초기 데이터 삽입
+        CoroutineScope(Dispatchers.IO).launch {
+            initializeData()
         }
     }
-    
-    fun getToppings(): List<ToppingItem> {
-        return listOf(
-            ToppingItem(1, "Big Mac Bun", 45, "https://m.mcdonalds.co.kr/upload/product/pcimg/1583727841698.png"),
-            ToppingItem(2, "100% Beef Patty", 150, "https://m.mcdonalds.co.kr/upload/product/pcimg/1583727868179.png"),
-            ToppingItem(3, "Shredded Lettuce", 5, "https://m.mcdonalds.co.kr/upload/product/pcimg/1583728230183.png"),
-            ToppingItem(4, "Big Mac Sauce", 60, "https://m.mcdonalds.co.kr/upload/product/pcimg/1583727896286.png"),
-            ToppingItem(5, "Cheese", 50, "https://m.mcdonalds.co.kr/upload/product/pcimg/1583727961767.png"),
-            ToppingItem(6, "Pickle Slices", 0, "https://m.mcdonalds.co.kr/upload/product/pcimg/1583728189301.png")
-        )
+
+    private suspend fun initializeData() {
+        // 기존 데이터가 있는지 확인
+        val existingCategories = categoryDao.getAllCategories()
+        if (existingCategories.isEmpty()) {
+            insertInitialDataFromJson()
+        }
+    }
+
+    private suspend fun insertInitialDataFromJson() {
+        try {
+            val initialData = JsonDataLoader.loadInitialDataFromAssets(context)
+            
+            if (initialData == null) {
+                Log.e("MenuRepository", "Failed to load initial data from JSON")
+                return
+            }
+
+            Log.d("MenuRepository", "Loading initial data from JSON...")
+
+            // 카테고리, 메뉴, 토핑 데이터를 저장할 리스트들
+            val categoryEntities = mutableListOf<com.example.kioskapp.database.entities.CategoryEntity>()
+            val menuEntities = mutableListOf<com.example.kioskapp.database.entities.MenuEntity>()
+            val toppingEntities = mutableListOf<com.example.kioskapp.database.entities.ToppingEntity>()
+
+            // JSON 데이터를 Entity로 변환
+            initialData.categories.forEach { categoryJson ->
+                // 카테고리 엔티티 추가
+                categoryEntities.add(categoryJson.toCategoryEntity())
+
+                // 해당 카테고리의 메뉴 아이템들 처리
+                categoryJson.menuItems.forEach { menuJson ->
+                    // 메뉴 엔티티 추가 (categoryId 설정)
+                    menuEntities.add(menuJson.toMenuEntity(categoryJson.id))
+
+                    // 해당 메뉴의 토핑들 처리
+                    menuJson.toppings.forEach { toppingJson ->
+                        // 토핑 엔티티 추가 (menuId 설정)
+                        toppingEntities.add(toppingJson.toToppingEntity(menuJson.id))
+                    }
+                }
+            }
+
+            // 데이터베이스에 삽입
+            categoryDao.insertAll(categoryEntities)
+            menuDao.insertAll(menuEntities)
+            toppingDao.insertAll(toppingEntities)
+
+            Log.d("MenuRepository", "Successfully inserted ${categoryEntities.size} categories, " +
+                    "${menuEntities.size} menu items, ${toppingEntities.size} toppings")
+
+        } catch (e: Exception) {
+            Log.e("MenuRepository", "Error loading initial data from JSON", e)
+        }
+    }
+
+    suspend fun getCategories(): List<CategoryItem> {
+        return categoryDao.getAllCategories().map { it.toCategoryItem() }
+    }
+
+    suspend fun getMenuItems(category: CategoryItem): List<MenuItem> {
+        return menuDao.getMenuItemsByCategory(category.id).map { it.toMenuItem() }
+    }
+
+    suspend fun getToppings(): List<ToppingItem> {
+        return toppingDao.getAllToppings().map { it.toToppingItem() }
+    }
+
+    suspend fun getToppingsByMenu(menu: MenuItem): List<ToppingItem> {
+        return toppingDao.getToppingsByMenu(menu.id).map { it.toToppingItem() }
     }
 } 

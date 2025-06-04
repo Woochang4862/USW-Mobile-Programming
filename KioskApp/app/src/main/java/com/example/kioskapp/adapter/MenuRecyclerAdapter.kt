@@ -1,6 +1,6 @@
 package com.example.kioskapp.adapter
 
-import CategoryItem
+import com.example.kioskapp.model.CategoryItem
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -54,7 +54,7 @@ class MenuRecyclerAdapter(private val onItemClickListener: OnItemClickListener) 
         items.clear()
         notifyItemRangeRemoved(0,prevItemCount)
         for (i in 1..30) {
-            items.add((MenuItem(i.toLong(),"메뉴 $i", 4500, category.imageUrl)))
+            items.add(MenuItem(i.toLong(),"메뉴 $i", 4500, category.imageUrl, category.id))
         }
         notifyItemRangeInserted(0,items.size)
     }

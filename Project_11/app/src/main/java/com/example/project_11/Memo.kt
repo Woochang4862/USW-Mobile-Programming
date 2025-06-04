@@ -1,4 +1,3 @@
 package com.example.project_11
 
-class Memo {
-}
+data class Memo (val id:Int, val title:String, val timestamp: String)

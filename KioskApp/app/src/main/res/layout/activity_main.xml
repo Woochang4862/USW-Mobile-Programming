@@ -17,6 +17,7 @@
 
         <!-- 왼쪽 패널 (메뉴 영역) -->
         <androidx.core.widget.NestedScrollView
+            android:id="@+id/nested_scroll_view"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="0.7"
@@ -134,12 +135,6 @@
                         android:textSize="18sp"
                         android:textStyle="bold" />
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Take Out"
-                        android:textColor="#666666"
-                        android:textSize="16sp" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -198,7 +193,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="20dp"
                     android:ellipsize="end"
-                    android:text="$13.86"
+                    android:text="0원"
                     android:textColor="#000000"
                     android:textSize="17sp"
                     android:textStyle="bold" />
